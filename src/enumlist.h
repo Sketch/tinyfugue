@@ -1,11 +1,10 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: enumlist.h,v 35000.22 2007/01/13 23:12:39 kkeys Exp $ */
 
 /* It may not be easy to read, but it keeps the constants and the array in the
  * same place, so they can't get out of sync.
@@ -71,6 +70,7 @@ bicode(STAT_ACTIVE,	STRING_LITERAL("active")),
 bicode(STAT_LOGGING,	STRING_LITERAL("log")),
 bicode(STAT_MAIL,	STRING_LITERAL("mail")),
 bicode(STAT_CLOCK,	STRING_LITERAL("clock")),
+bicode(STAT_ALERT,	STRING_LITERAL("alert")),
 bicode(STAT_COUNT,	STRING_NULL),
 bicode(STAT_NONE = -1,	STRING_NULL)
 }

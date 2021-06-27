@@ -1,11 +1,10 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: socket.c,v 35004.288 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /***************************************************************
@@ -35,10 +34,20 @@ static const char RCSid[] = "$Id: socket.c,v 35004.288 2007/01/13 23:12:39 kkeys
 #endif
 
 #if HAVE_SSL
-# include <openssl/ssl.h>
-# include <openssl/err.h>
+# if HAVE_GNUTLS_OPENSSL_H
+#  include <gnutls/openssl.h>
+# else
+#  include <openssl/ssl.h>
+#  include <openssl/err.h>
+# endif
     SSL_CTX *ssl_ctx;
 #endif
+
+/* Receive buffer before deciding server is misbehaving.
+ * This was previously 1024, but that's quite low for
+ * current servers. It should be fairly safe to modify
+ * this up or down as needed. */
+#define RECEIVELIMIT ((32 * 1024) -1)
 
 #ifdef NETINET_IN_H
 # include NETINET_IN_H
@@ -112,7 +121,9 @@ struct sockaddr_in {
 # endif
 #endif
 
-#include NETDB_H
+#ifdef NETDB_H
+  #include NETDB_H
+#endif
 
 #if !HAVE_GAI_STRERROR || !defined(AI_NUMERICHOST) || !defined(EAI_SERVICE)
   /* System's implementation is incomplete.  Avoid it. */
@@ -215,7 +226,7 @@ static const char *h_errlist[] = {
  * Nonblocking connect will work on a system if the column contains a 'W'
  * and there is no 'F' above it; 'N' does not matter.  The order of the
  * tests is arranged to keep the 'F's below the 'W's.
- * 
+ *
  *                                                        S
  *                                                        o
  *                                      P           L  S  l     H
@@ -448,9 +459,19 @@ STATIC_BUFFER(telbuf);
 #define TN_AUTH		((char)37)	/* 1416 - (not used) */
 #define TN_NEW_ENVIRON	((char)39)	/* 1572 - (not used) */
 #define TN_CHARSET	((char)42)	/* 2066 - Charset negotiation */
-/* 85 & 86 are not standard.  See http://www.randomly.org/projects/MCCP/ */
+/* 85 & 86 are not standard.
+ * See http://www.randomly.org/projects/MCCP */
 #define TN_COMPRESS	((char)85)	/* MCCP v1 */
 #define TN_COMPRESS2	((char)86)	/* MCCP v2 */
+/* 200 is not standard.
+ * See http://www.ironrealms.com/rapture/manual/files/FeatATCP-txt.html */
+#define TN_ATCP		((char)200)	/* ATCP */
+/* 201 is not standard.
+ * See http://www.aardwolf.com/wiki/index.php/Clients/GMCP */
+#define TN_GMCP		((char)201)	/* GMCP */
+/* 102 is not standard.
+ * See http://www.aardwolf.com/blog/category/technical */
+#define TN_102		((char)102)	/* Option 102 */
 
 #define UCHAR		unsigned char
 
@@ -547,9 +568,11 @@ static void ssl_io_err(Sock *sock, int ret, int hook)
     case SSL_ERROR_WANT_WRITE:
 	ssl_io_err_hook("SSL", "SSL_ERROR_WANT_WRITE");
 	break;
+#ifdef SSL_ERROR_WANT_CONNECT
     case SSL_ERROR_WANT_CONNECT:
 	ssl_io_err_hook("SSL", "SSL_ERROR_WANT_CONNECT");
 	break;
+#endif
     case SSL_ERROR_SYSCALL:
 	if (ret == 0) {
 	    ssl_io_err_hook("SSL/system", "invalid EOF");
@@ -623,6 +646,9 @@ void init_sock(void)
     telnet_label[(UCHAR)TN_CHARSET]	= "CHARSET";
     telnet_label[(UCHAR)TN_COMPRESS]	= "COMPRESS";
     telnet_label[(UCHAR)TN_COMPRESS2]	= "COMPRESS2";
+    telnet_label[(UCHAR)TN_ATCP]	= "ATCP";
+    telnet_label[(UCHAR)TN_GMCP]	= "GMCP";
+    telnet_label[(UCHAR)TN_102]		= "102";
     telnet_label[(UCHAR)TN_EOR]		= "EOR";
     telnet_label[(UCHAR)TN_SE]		= "SE";
     telnet_label[(UCHAR)TN_NOP]		= "NOP";
@@ -677,11 +703,11 @@ void main_loop(void)
         if (depth > 1 && interrupted()) break;
 
         /* deal with pending signals */
-        /* at loop beginning in case of signals before main_loop() */ 
+        /* at loop beginning in case of signals before main_loop() */
         process_signals();
 
         /* run processes */
-        /* at loop beginning in case of processes before main_loop() */ 
+        /* at loop beginning in case of processes before main_loop() */
         gettime(&now);
         if (proctime.tv_sec && tvcmp(&proctime, &now) <= 0)
 	    runall(0, NULL); /* run timed processes */
@@ -790,7 +816,7 @@ void main_loop(void)
          *   descriptor write:	nonblocking connect()
          *   timeout:		time for runall() or do_refresh()
          * Note: if the same descriptor appears in more than one fd_set, some
-         * systems count it only once, some count it once for each occurance.
+         * systems count it only once, some count it once for each occurrence.
          */
         active = readers;
         connected = writers;
@@ -1426,8 +1452,12 @@ static void setupnextconn(Sock *sock)
 {
     struct addrinfo *ai, *next = sock->addr;
 
-    if (sock->fd >= 0)
-	close(sock->fd);
+    if (sock->fd >= 0) {
+        FD_CLR(sock->fd, &readers);
+        FD_CLR(sock->fd, &writers);
+	close(sock->fd); 
+        sock->fd = -1;
+    }
 retry:
     next = next->ai_next;
     /* if next address is a duplicate of one we've already done, skip it */
@@ -1865,7 +1895,7 @@ static int nonblocking_gethost(const char *name, const char *port,
 #ifdef PLATFORM_OS2
     {
         threadpara *tpara;
-  
+
         if ((tpara = XMALLOC(sizeof(threadpara)))) {
             setmode(fds[0],O_BINARY);
             setmode(fds[1],O_BINARY);
@@ -2444,12 +2474,12 @@ int handle_send_function(conString *string, const char *world,
 
     for (p = flags; *p; p++) {
 	switch (*p) {
-	case 'o': /* for backward compatability */
+	case 'o': /* for backward compatibility */
 	    break;
-	case '1': case 'n': /* for backward compatability */
+	case '1': case 'n': /* for backward compatibility */
 	    eol_flag = 1; break;
 	case 'u': /* fall through */
-	case '0': case 'f': /* for backward compatability */
+	case '0': case 'f': /* for backward compatibility */
 	    eol_flag = 0; break;
 	case 'h':
 	    hook_flag = 1; break;
@@ -2465,6 +2495,45 @@ int handle_send_function(conString *string, const char *world,
     xsock = old_xsock;
     return result;
 }
+
+#if ENABLE_ATCP
+int handle_atcp_function(conString *string, const char *world)
+{
+    Sock *old_xsock = xsock;
+
+    xsock = (!world || !*world) ? xsock : find_sock(world);
+        Sprintf(telbuf, "%c%c%c%s%c%c", TN_IAC, TN_SB, TN_ATCP, string->data, TN_IAC, TN_SE);
+        telnet_send(telbuf);
+    xsock = old_xsock;
+        return 1;
+}
+#endif
+
+#if ENABLE_GMCP
+int handle_gmcp_function(conString *string, const char *world)
+{
+    Sock *old_xsock = xsock;
+
+    xsock = (!world || !*world) ? xsock : find_sock(world);
+        Sprintf(telbuf, "%c%c%c%s%c%c", TN_IAC, TN_SB, TN_GMCP, string->data, TN_IAC, TN_SE);
+        telnet_send(telbuf);
+    xsock = old_xsock;
+        return 1;
+}
+#endif
+
+#if ENABLE_OPTION102
+int handle_option102_function(conString *string, const char *world)
+{
+    Sock *old_xsock = xsock;
+
+    xsock = (!world || !*world) ? xsock : find_sock(world);
+        Sprintf(telbuf, "%c%c%c%s%c%c", TN_IAC, TN_SB, TN_102, string->data, TN_IAC, TN_SE);
+        telnet_send(telbuf);
+    xsock = old_xsock;
+        return 1;
+}
+#endif
 
 /* Code for the undocumented fake_recv script function. */
 int handle_fake_recv_function(conString *string, const char *world,
@@ -2490,10 +2559,12 @@ int handle_fake_recv_function(conString *string, const char *world,
         eprintf("no open world %s", world ? world : "");
 	return 0;
     }
-    if (raw)
+    if (raw) {
 	handle_socket_input(string->data, string->len, NULL);
-    else
+    } else {
 	queue_socket_line(sock, string, string->len, 0);
+	flushxsock();
+    }
     return 1;
 }
 
@@ -2689,7 +2760,9 @@ static void handle_socket_lines(void)
 	    socks_with_lines--;
 
 	if (line->attrs & (F_TFPROMPT)) {
-	    incoming_text = line;
+        // XXX: This should be cleaner. Adding cast to avoid warning,
+        // But really we should have a copy function or something, right?
+	    incoming_text = (String *) line;
 	    handle_prompt(incoming_text, 0, TRUE);
 	    continue;
 	}
@@ -2877,7 +2950,6 @@ static void test_prompt(void)
 
 static void telnet_subnegotiation(void)
 {
-    unsigned int i;
     char *p;
     const char *end;
     char temp_buff[255]; /* Same length as whole subnegotiation line. */
@@ -2944,7 +3016,7 @@ static void telnet_subnegotiation(void)
 	      newconverter = ucnv_open(temp_buff, &newconvertererr);
 	  /* TODO: Check U_MEMORY_ALLOCATION_ERROR and U_FILE_ACCESS_ERROR */
 	      if (newconverter != NULL) {
-		  p = end; /* Prefer the first valid charset! */
+		  p = (char *) end; /* Prefer the first valid charset! */
 	      }
 	   }
 	   if (newconverter != NULL) {
@@ -2965,6 +3037,21 @@ static void telnet_subnegotiation(void)
 	}
 	telnet_send(telbuf);
 	break;
+#endif
+#if ENABLE_ATCP
+    case TN_ATCP:
+        do_hook(H_ATCP, NULL, "%s", xsock->subbuffer->data + 3);
+        break;
+#endif
+#if ENABLE_GMCP
+    case TN_GMCP:
+        do_hook(H_GMCP, NULL, "%s", xsock->subbuffer->data + 3);
+        break;
+#endif
+#if ENABLE_OPTION102
+    case TN_102:
+        do_hook(H_OPTION102, NULL, "%s", xsock->subbuffer->data + 3);
+        break;
 #endif
     default:
 	no_reply("unknown option");
@@ -3079,7 +3166,7 @@ char* u_strToUTF8 	( 	char *  	dest,
  */
 static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
 {
-    char rawchar, localchar, inbuffer[BUFFSIZE];
+    char rawchar, inbuffer[BUFFSIZE];
     const char *incoming, *place;
 #if HAVE_MCCP
     char mccpbuffer[BUFFSIZE];
@@ -3091,7 +3178,6 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
     String *incomingposttelnet;
     UConverter *incomingFSM = NULL;
     UErrorCode incomingERR;
-    int shiftby;
 #endif
 
     if (xsock->constate <= SS_CONNECTING || xsock->constate >= SS_ZOMBIE)
@@ -3123,9 +3209,12 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 #if HAVE_SSL
 	    if (xsock->ssl) {
 		count = SSL_read(xsock->ssl, inbuffer, sizeof(inbuffer));
-		if (count == 0 &&
-		    SSL_get_error(xsock->ssl, 0) == SSL_ERROR_SYSCALL &&
-		    ERR_peek_error() == 0)
+		if (count == 0
+# if HAVE_ERR_PEEK_ERROR
+		    && SSL_get_error(xsock->ssl, 0) == SSL_ERROR_SYSCALL &&
+		    ERR_peek_error() == 0
+# endif
+		    )
 		{
 		    /* Treat a count of 0 with no errors as a normal EOF */
 		    goto eof;
@@ -3191,9 +3280,13 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 		case Z_STREAM_END:
 		    /* handle stuff inflated before stream end */
 		    /* NOTE: This could be partway into parsing a character!? */
+		    /* NOTE: the added if() mentioned being in response to an mccp lockup glitch,
+		     * see if that takes care of the concerns of the above note.
+		     */
 		    count = (char*)xsock->zstream->next_out - mccpbuffer;
-		    received += handle_socket_input(mccpbuffer, count, NULL);
-		    /* prepare to handle noncompressed stuff after stream end */
+                    if(count > 0)
+		        received += handle_socket_input(mccpbuffer, count, NULL);
+		    /* prepare to handle non-compressed stuff after stream end */
 		    incoming = (char*)xsock->zstream->next_in;
 		    count = xsock->zstream->avail_in;
 		    /* clean up zstream */
@@ -3247,7 +3340,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
                 case TN_SB:
 		    if (!(xsock->flags & SOCKTELNET)) {
 			/* Telnet subnegotiation can't happen without a
-			 * previous telnet option negotation, so treat the
+			 * previous telnet option negotiation, so treat the
 			 * IAC SB as non-telnet, and disable telnet. */
 			xsock->flags &= ~SOCKMAYTELNET;
 			place--;
@@ -3306,7 +3399,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
                 continue;  /* avoid non-telnet processing */
 
             } else if (xsock->fsastate == TN_SB) {
-		if (xsock->subbuffer->len > 255) {
+		if (xsock->subbuffer->len > RECEIVELIMIT) {
 		    /* It shouldn't take this long; server is broken.  Abort. */
 #if WIDECHAR
 		    SStringcat(incomingposttelnet, CS(xsock->subbuffer));
@@ -3367,6 +3460,15 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 		    (rawchar == TN_COMPRESS && mccp) ||
 		    (rawchar == TN_COMPRESS2 && mccp) ||
 #endif
+#if ENABLE_ATCP
+		    (rawchar == TN_ATCP && atcp) ||
+#endif
+#if ENABLE_GMCP
+		    (rawchar == TN_GMCP && gmcp) ||
+#endif
+#if ENABLE_OPTION102
+		    (rawchar == TN_102 && option102) ||
+#endif
                     rawchar == TN_ECHO ||
                     rawchar == TN_SEND_EOR ||
 #if WIDECHAR
@@ -3410,6 +3512,9 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
                 } else if (
                     rawchar == TN_NAWS ||
                     rawchar == TN_TTYPE ||
+#if ENABLE_ATCP
+		    (rawchar == TN_ATCP && atcp) ||
+#endif
                     rawchar == TN_BINARY)
                 {
                     SET_TELOPT(xsock, us, rawchar);  /* set state */
@@ -3535,7 +3640,6 @@ non_telnet:
 STATIC_BUFFER(nextline); /* Static for speed */
 static void handle_socket_input_queue_lines(Sock *sock)
 {
-    String *debug = sock->buffer;
     char *place;
     char *bufferend = sock->buffer->data + sock->buffer->len;
     char rawchar, localchar;
@@ -3578,7 +3682,7 @@ static void handle_socket_input_queue_lines(Sock *sock)
             Stringtrunc(nextline, 0);
             place = sock->buffer->data - 1;
             bufferend = sock->buffer->data + sock->buffer->len;
-            /* other occurances of '\b' are handled by decode_ansi(), so
+            /* other occurrences of '\b' are handled by decode_ansi(), so
             * ansi codes aren't clobbered before they're interpreted */
 
         } else {
@@ -3799,10 +3903,10 @@ const char *world_info(const char *worldname, const char *fieldname)
 {
     World *world;
     const char *result;
- 
+
     world = worldname ? find_world(worldname) : xworld();
     if (!world) return ""; /* not an error */
- 
+
     if (!fieldname || strcmp("name", fieldname) == 0) {
         result = world->name;
     } else if (strcmp("type", fieldname) == 0) {

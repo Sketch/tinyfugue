@@ -1,7 +1,6 @@
-# $Id: vars.mak.in,v 35004.13 2007/01/13 23:12:39 kkeys Exp $
 ########################################################################
 #  TinyFugue - programmable mud client
-#  Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+#  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
 #
 #  TinyFugue (aka "tf") is protected under the terms of the GNU
 #  General Public License.  See the file "COPYING" for details.
@@ -11,14 +10,15 @@
 ########################################################################
 
 # @configure_input@
-
-prefix     = @prefix@
-exec_prefix= @exec_prefix@
-bindir     = @bindir@
-datadir    = @datadir@
-mandir     = @mandir@
+prefix     = ${DESTDIR}@prefix@
+exec_prefix= ${DESTDIR}@exec_prefix@
+bindir     = ${DESTDIR}@bindir@
+datadir    = ${DESTDIR}@datadir@
+mandir     = ${DESTDIR}@mandir@
+datarootdir= ${DESTDIR}@datarootdir@
 
 TFVERSION  = @TFVERSION@
+TFVER      = @TFVER@
 X          = @EXEEXT@
 O          = @OBJEXT@
 @SET_MAKE@
@@ -28,14 +28,14 @@ TF         = ${bindir}/@EXENAME@${X}
 # already exist in the environment.
 TF_LIBDIR  = ${datadir}/@LIBNAME@
 SYMLINK    = @SYMLINK@
-# MANPAGE    = ${mandir}/man1/tf.1
-# MANTYPE    = @MANTYPE@
+MANPAGE    = ${mandir}/man1/tf.1
+MANTYPE    = @MANTYPE@
 MODE       = @MODE@
 CC         = @CC@
-CFLAGS     = @CFLAGS@ @CPPFLAGS@
+CFLAGS     = @CFLAGS@ @CPPFLAGS@ @ICU_CFLAGS@
 LDFLAGS    = @LDFLAGS@
-STD_C      = @STD_C@
 STRIP      = @STRIP@
 RANLIB     = @RANLIB@
-LIBS       = @LIBS@
+LIBS       = @LIBS@ @ICU_LIBS@
 OTHER_OBJS = @OTHER_OBJS@
+

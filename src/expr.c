@@ -1,11 +1,10 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: expr.c,v 35004.179 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /********************************************************************
@@ -267,7 +266,7 @@ void freeval_fl(Value *val, const char *file, int line)
 {
     if (!val) return;
     if (--val->count > 0) return;
-    assert(val->count == 0); 
+    assert(val->count == 0);
     clearval_fl(val, file, line);
     if (val->name) {
         xfree(NULL, (void*)val->name, file, line);
@@ -735,7 +734,7 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
 	    neg1 = int1 < 0;
 	    sum = (int0 + int1);
 	}
-	if (neg0 == neg1 && sum<0 != neg0) {
+	if (neg0 == neg1 && (sum < 0) != neg0) {
 	    /* operands have same sign, but sum has different sign: overflow */
 	    promoted_type = TYPE_FLOAT;
 	}
@@ -744,8 +743,8 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
     switch (promoted_type) {
     case TYPE_INT:
         switch (op & ~OPF_SIDE) {
-        case '>':       return resint(valint(val[0]) > valint(val[1]));
-        case '<':       return resint(valint(val[0]) < valint(val[1]));
+        case '>':       return resint(valint(val[0]) >  valint(val[1]));
+        case '<':       return resint(valint(val[0]) <  valint(val[1]));
         case OP_EQUAL:  return resint(valint(val[0]) == valint(val[1]));
         case OP_NOTEQ:  return resint(valint(val[0]) != valint(val[1]));
         case OP_GTE:    return resint(valint(val[0]) >= valint(val[1]));
@@ -795,8 +794,8 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
     case TYPE_FLOAT:
 	f = valfloat(val[0]);
 	switch (op & ~OPF_SIDE) {
-	case '>':       return resint(f > valfloat(val[1]));
-	case '<':       return resint(f < valfloat(val[1]));
+	case '>':       return resint(f >  valfloat(val[1]));
+	case '<':       return resint(f <  valfloat(val[1]));
 	case OP_EQUAL:  return resint(f == valfloat(val[1]));
 	case OP_NOTEQ:  return resint(f != valfloat(val[1]));
 	case OP_GTE:    return resint(f >= valfloat(val[1]));
@@ -968,9 +967,15 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 	    return_user_result();
 
         case FN_send:
-            i = handle_send_function(opdstr(n), (n>1 ? opdstd(n-1) : NULL), 
+            i = handle_send_function(opdstr(n), (n>1 ? opdstd(n-1) : NULL),
 		(n>2 ? opdstd(n-2) : ""));
             return newint(i);
+
+#if ENABLE_ATCP
+        case FN_atcp:
+            i = handle_atcp_function(opdstr(n), (n>1 ? opdstd(n-1) : NULL));
+            return newint(i);
+#endif
 
         case FN_fake_recv:
             i = handle_fake_recv_function(opdstr(n),
@@ -992,6 +997,18 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
         case FN_tfopen:
             return newint(handle_tfopen_func(
                 n<2 ? "" : opdstd(2), n<1 ? "q" : opdstd(1)));
+
+#if ENABLE_GMCP
+        case FN_gmcp:
+            i = handle_gmcp_function(opdstr(n), (n>1 ? opdstd(n-1) : NULL));
+            return newint(i);
+#endif
+
+#if ENABLE_OPTION102
+        case FN_option102:
+            i = handle_option102_function(opdstr(n), (n>1 ? opdstd(n-1) : NULL));
+            return newint(i);
+#endif
 
         case FN_tfclose:
             str = opdstd(1);
@@ -1208,13 +1225,13 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 	    {
 		struct tm tm;
 		time_t t;
-		unsigned int usec = 0;
-		tm.tm_sec  = 0;
-		tm.tm_min  = 0;
-		tm.tm_hour = 0;
-		tm.tm_mday = 1;
-		tm.tm_mon  = 0;
-		tm.tm_year = 0;
+		int usec = 0;
+		tm.tm_sec   = 0;
+		tm.tm_min   = 0;
+		tm.tm_hour  = 0;
+		tm.tm_mday  = 1;
+		tm.tm_mon   = 0;
+		tm.tm_year  = 0;
 		tm.tm_isdst = -1;
 		switch (n) {
 		    case 7: usec       = opdint(n-6);
@@ -1226,7 +1243,7 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 		    case 1: tm.tm_year = opdint(n-0) - 1900;
 		}
 		t = mktime(&tm);
-		if (t == -1 || usec < 0 || usec > 999999)
+		if (t == -1 || usec > 999999)
 		    return newatime(-1, 0);
 		if (t < 0 && usec > 0) {
 		    t += 1;
@@ -1264,7 +1281,7 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 	  {
 	    Value *val;
             (Sstr = opdstrdup(1))->links++;	/* XXX not needed if no match */
-	    /* test for type ==, not &; it must not have other extentions */
+	    /* test for type ==, not &; it must not have other extensions */
             i = regmatch_in_scope(opd(2)->type == TYPE_STR ? opd(2) : NULL,
 		opdstd(2), Sstr);
 	    Stringfree(Sstr);
@@ -1922,7 +1939,7 @@ static int primary_expr(Program *prog, int could_be_div_or_macro)
         parse_error(prog, "expression", "operand");
         return 0;
     }
-    
+
     eat_space(prog);
     return 1;
 }

@@ -1,11 +1,10 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: globals.h,v 35000.78 2007/01/13 23:12:39 kkeys Exp $ */
 
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -158,6 +157,10 @@ enum Vars {
 #define TFMAILPATH	getstdvar(VAR_TFMAILPATH)
 #define alert_attr	getattrvar(VAR_alert_attr)
 #define alert_time	gettimevar(VAR_alert_time)
+#define ansi_log	getintvar(VAR_ansi_log)
+#define async_conn	getintvar(VAR_async_conn)
+#define async_name	getintvar(VAR_async_name)
+#define atcp		getintvar(VAR_atcp)
 #define auto_fg		getintvar(VAR_auto_fg)
 #define background	getintvar(VAR_background)
 #define backslash	getintvar(VAR_backslash)
@@ -176,11 +179,11 @@ enum Vars {
 #define defcompile	getintvar(VAR_defcompile)
 #define emulation 	getintvar(VAR_emulation)
 #define error_attr	getattrvar(VAR_error_attr)
+#define error_prefix    getstdvar(VAR_error_prefix)
 #define expand_tabs 	getintvar(VAR_expand_tabs)
 #define expnonvis 	getintvar(VAR_expnonvis)
 #define gag		getintvar(VAR_gag)
-#define async_name	getintvar(VAR_async_name)
-#define async_conn	getintvar(VAR_async_conn)
+#define gmcp		getintvar(VAR_gmcp)
 #define gpri		getintvar(VAR_gpri)
 #define hilite		getintvar(VAR_hilite)
 #define hiliteattr	getattrvar(VAR_hiliteattr)
@@ -199,6 +202,8 @@ enum Vars {
 #define keypad		getintvar(VAR_keypad)
 #define kprefix		getstrvar(VAR_kprefix)
 #define login		getintvar(VAR_login)
+#define log_prefix	getstrvar(VAR_log_prefix)
+#define log_time_format	getstrvar(VAR_log_time_format)
 #define lpflag		getintvar(VAR_lp)
 #define lpquote		getintvar(VAR_lpquote)
 #define maildelay	gettimevar(VAR_maildelay)
@@ -215,7 +220,9 @@ enum Vars {
 #define more		getintvar(VAR_more)
 #define mprefix		getstrvar(VAR_mprefix)
 #define oldslash	getintvar(VAR_oldslash)
+#define oldunnamed	getintvar(VAR_oldunnamed)
 #define optimize_user	getintvar(VAR_optimize)
+#define option102	getintvar(VAR_option102)
 #define pedantic	getintvar(VAR_pedantic)
 #define prompt_wait	gettimevar(VAR_prompt_wait)
 #define proxy_host	getstdvar(VAR_proxy_host)
@@ -265,10 +272,6 @@ enum Vars {
 #define visual		((long)(getintvar(VAR_visual) > 0))
 
 extern Var special_var[];
-
-#if HAVE_SETLOCALE
-static char *lang = NULL;
-#endif
 
 #define reset_kbnum()	unsetvar(&special_var[VAR_kbnum])
 

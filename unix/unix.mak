@@ -1,7 +1,6 @@
-# $Id: unix.mak,v 35004.50 2007/01/13 23:12:39 kkeys Exp $
 ########################################################################
 #  TinyFugue - programmable mud client
-#  Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+#  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
 #
 #  TinyFugue (aka "tf") is protected under the terms of the GNU
 #  General Public License.  See the file "COPYING" for details.
@@ -17,7 +16,6 @@
 SHELL      = /bin/sh
 BUILDERS   = Makefile
 
-
 default: all
 
 install:  _all PREFIXDIRS $(TF) LIBRARY $(MANPAGE) $(SYMLINK)
@@ -26,7 +24,7 @@ install:  _all PREFIXDIRS $(TF) LIBRARY $(MANPAGE) $(SYMLINK)
 	@echo '## TinyFugue installation successful.'
 	@echo '##    tf binary: $(TF)'
 	@echo '##    library:   $(TF_LIBDIR)'
-#	@echo '##    manpage:   $(MANPAGE)'
+	@echo '##    manpage:   $(MANPAGE)'
 	@DIR=`echo $(TF) | sed 's;/[^/]*$$;;'`; \
 	echo ":$(PATH):" | egrep ":$${DIR}:" >/dev/null 2>&1 || { \
 	    echo "##"; \
@@ -49,37 +47,16 @@ all files:  _all
 	@echo '## Use "$(MAKE) install" to install:'
 	@echo '##    tf binary: $(TF)'
 	@echo '##    library:   $(TF_LIBDIR)'
-#	@echo '##    manpage:   $(MANPAGE)'
+	@echo '##    manpage:   $(MANPAGE)'
 
-_all:  tf$(X) ../tf-lib/tf-help.idx
+_all: tf$(X) ../tf-lib/tf-help.idx
 
 _failmsg:
-#	@echo '#####################################################'
-#	@echo '## TinyFugue installation FAILED.'
-#	@echo '## See README for help.'
-#	@if [ "$(STD_C)" != "1" ]; then \
-#	    echo '## '; \
-#	    echo '## TF requires a standard (ANSI/ISO 9889-1990) C compiler.'; \
-#	    echo '## The standard has existed since 1989, and gcc is freely'; \
-#	    echo '## available for many platforms, so there is really no'; \
-#	    echo '## excuse for not having a standard compiler at this time.'; \
-#	    echo '## If your system does not have one, you should complain'; \
-#	    echo '## strongly to the vendor or administrator.  Do not bother'; \
-#	    echo '## contacting the author of TF.'; \
-#	elif [ "$(CC)" = "gcc" ]; then \
-#	    echo '## '; \
-#	    echo '## Perhaps $(CC) is not configured correctly.  Before'; \
-#	    echo '## contacting the TF author, try setting the environment'; \
-#	    echo '## variable CC to "cc", and run ./configure again.'; \
-#	fi
+	@echo '#####################################################'
+	@echo '## TinyFugue installation FAILED.'
+	@echo '## See README for help.'
 
-pcre:
-# ranlib is required by MacOS X, maybe others
-	cd pcre-2.08 && \
-	    $(MAKE) CC='$(CC)' CFLAGS='-O' O=o libpcre.a && \
-	    $(RANLIB) libpcre.a
-
-TF tf$(X):     $(OBJS) $(BUILDERS) $(PCRE)
+TF tf$(X): $(OBJS) $(BUILDERS)
 	$(CC) $(LDFLAGS) -o tf$(X) $(OBJS) $(LIBS) -lpcre
 #	@# Some stupid linkers return ok status even if they fail.
 	@test -f "tf$(X)"
@@ -87,8 +64,8 @@ TF tf$(X):     $(OBJS) $(BUILDERS) $(PCRE)
 	-test -z "$(STRIP)" || $(STRIP) tf$(X) || true
 
 PREFIXDIRS:
-	test -d "$(bindir)" || mkdir $(bindir)
-	test -d "$(datadir)" || mkdir $(datadir)
+	test -d "$(bindir)" || mkdir -p $(bindir)
+	test -d "$(datadir)" || mkdir -p $(datadir)
 
 install_TF $(TF): tf$(X) $(BUILDERS)
 	-@rm -f $(TF)
@@ -98,16 +75,17 @@ install_TF $(TF): tf$(X) $(BUILDERS)
 SYMLINK $(SYMLINK): $(TF)
 	test -z "$(SYMLINK)" || { rm -f $(SYMLINK) && ln -s $(TF) $(SYMLINK); }
 
+# There's a lot of unecessary steps below here.
+
 LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	@echo '## Creating library directory...'
 #	@# Overly simplified shell commands, to avoid problems on ultrix
-	-@test -n "$(TF_LIBDIR)" || echo "TF_LIBDIR is undefined."
-	test -n "$(TF_LIBDIR)"
-	test -d "$(TF_LIBDIR)" || mkdir $(TF_LIBDIR)
-	-@test -d "$(TF_LIBDIR)" || echo "Can't make $(TF_LIBDIR) directory.  See if"
-	-@test -d "$(TF_LIBDIR)" || echo "there is already a file with that name."
-	test -d "$(TF_LIBDIR)"
-#
+	-@test -n $(TF_LIBDIR) || echo "TF_LIBDIR is undefined."
+	test -n $(TF_LIBDIR)
+	test -d $(TF_LIBDIR) || mkdir -p $(TF_LIBDIR)
+	-@test -d $(TF_LIBDIR) || echo "Can't make $(TF_LIBDIR) directory.  See if"
+	-@test -d $(TF_LIBDIR) || echo "there is already a file with that name."
+	test -d $(TF_LIBDIR)
 #	@#rm -f $(TF_LIBDIR)/*;  # wrong: this would remove local.tf, etc.
 	@echo '## Copying library files...'
 	cd ../tf-lib; \
@@ -133,6 +111,7 @@ LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	rm -f factorial.tf;    ln -s  factoral.tf  factorial.tf;    \
 	rm -f file-xfer.tf;    ln -s  filexfer.tf  file-xfer.tf;    \
 	rm -f local.tf.sample; ln -s  local-eg.tf  local.tf.sample; \
+	rm -f mylib.tf;        ln -s  utilities.tf mylib.tf;        \
 	rm -f pref-shell.tf;   ln -s  psh.tf       pref-shell.tf;   \
 	rm -f space_page.tf;   ln -s  spc-page.tf  space_page.tf;   \
 	rm -f speedwalk.tf;    ln -s  spedwalk.tf  speedwalk.tf;    \
@@ -140,13 +119,16 @@ LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	rm -f worldqueue.tf;   ln -s  world-q.tf   worldqueue.tf;
 
 makehelp: makehelp.c
-	$(CC) $(CFLAGS) -o makehelp makehelp.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o makehelp makehelp.c
 
 __always__:
 
 ../tf-lib/tf-help: __always__
 	if test -d ../help; then cd ../help; $(MAKE) tf-help; fi
-	if test -d ../help; then cp ../help/tf-help ../tf-lib; fi
+# Skip this step for now.
+# Currently the HTML documents are the least up to date, so they
+# shouldn't be blowing away the most up to date documents.
+#	if test -d ../help; then cp ../help/tf-help ../tf-lib; fi
 
 ../tf-lib/tf-help.idx: ../tf-lib/tf-help makehelp
 	$(MAKE) -f ../unix/unix.mak CC='$(CC)' CFLAGS='$(CFLAGS)' makehelp
@@ -171,7 +153,6 @@ uninstall:
 
 clean distclean cleanest:
 	cd ..; make -f unix/Makefile $@
-
 
 # development stuff, not necessarily portable.
 

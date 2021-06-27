@@ -1,11 +1,10 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: varlist.h,v 35000.78 2007/01/13 23:12:39 kkeys Exp $ */
 
 /* This keeps the constants and the array in the same place, so they can't
  * get out of sync.
@@ -43,6 +42,13 @@ varstr (VAR_TFPATH,	"TFPATH",	NULL,		NULL)
 varstrx(VAR_TZ,		"TZ",		NULL,		ch_timezone)
 varstr (VAR_alert_attr,	"alert_attr",	"Br",		ch_attr)
 vartime(VAR_alert_time,	"alert_time",	5,0,		NULL)
+varflag(VAR_ansi_log,	"ansi_log",	FALSE,		NULL)
+#if ENABLE_ATCP
+varflag(VAR_atcp,       "atcp",         TRUE,           NULL)
+#else
+varenum(VAR_atcp,       "atcp",         FALSE,          NULL,   enum_off)
+#endif
+varenum(VAR_async_name,	"gethostbyname",TRUE,		NULL,	enum_block)
 #if 0
 varflag(VAR_auto_fg,	"auto_fg",	FALSE,		NULL)
 #endif
@@ -64,14 +70,19 @@ varenum(VAR_async_conn,	"connect",	TRUE,		NULL,	enum_block)
 varflag(VAR_defcompile,	"defcompile",	FALSE,		NULL)
 varenum(VAR_emulation,	"emulation",	EMUL_ANSI_ATTR,	NULL,	enum_emul)
 varstr (VAR_error_attr,	"error_attr",	NULL,		ch_attr)
+varstr (VAR_error_prefix,"error_prefix","%",            NULL)
 varflag(VAR_expand_tabs,"expand_tabs",	TRUE,		NULL)
 varflag(VAR_expnonvis,	"expnonvis",	FALSE,		ch_expnonvis)
 varflag(VAR_gag,	"gag",		TRUE,		NULL)
-varenum(VAR_async_name,	"gethostbyname",TRUE,		NULL,	enum_block)
+#if ENABLE_GMCP
+varflag(VAR_gmcp,       "gmcp",         TRUE,           NULL)
+#else
+varenum(VAR_gmcp,       "gmcp",         FALSE,          NULL,   enum_off)
+#endif
 varint (VAR_gpri,	"gpri",		0,		NULL)
 varflag(VAR_hilite,	"hilite",	TRUE,		NULL)
 varstr (VAR_hiliteattr,	"hiliteattr",	"B",		ch_attr)
-varpos (VAR_histsize,	"histsize",	1000,		NULL)
+varpos (VAR_histsize,	"histsize",	5000,		NULL)
 varflag(VAR_hook,	"hook",		TRUE,		NULL)
 varint (VAR_hpri,	"hpri",		0,		NULL)
 varenum(VAR_iecho,	"iecho",	0,		NULL,	enum_mecho)
@@ -88,6 +99,8 @@ varflag(VAR_keepalive,	"keepalive",	TRUE,		tog_keepalive)
 varflag(VAR_keypad,	"keypad",	FALSE,		tog_keypad)
 varstr (VAR_kprefix,	"kprefix",	NULL,		NULL)
 varflag(VAR_login,	"login",	TRUE,		NULL)
+varstr (VAR_log_prefix, "log_prefix",	FALSE,          NULL)
+varstr (VAR_log_time_format,"log_time_format","%H:%M:%S",NULL)
 varflag(VAR_lp,		"lp",		FALSE,		tog_lp)
 varflag(VAR_lpquote,	"lpquote",	FALSE,		ch_lpquote)
 vartime(VAR_maildelay,	"maildelay",	60,0,		ch_maildelay)
@@ -108,7 +121,13 @@ varenum(VAR_meta_esc,	"meta_esc",	META_NONPRINT,	NULL,	enum_meta)
 varflag(VAR_more,	"more",		FALSE,		tog_more)
 varstr (VAR_mprefix,	"mprefix",	"+",		NULL)
 varflag(VAR_oldslash,	"oldslash",	TRUE,		NULL)
+varflag(VAR_oldunnamed,	"oldunnamed",	FALSE,		NULL)
 varflag(VAR_optimize,	"optimize",	TRUE,		NULL)
+#if ENABLE_OPTION102
+varflag(VAR_option102,  "option102",    TRUE,           NULL)
+#else
+varenum(VAR_option102,  "option102",    FALSE,          NULL,   enum_off)
+#endif
 varflag(VAR_pedantic,	"pedantic",	FALSE,		NULL)
 varstr (VAR_prompt_sec,	"prompt_sec",	NULL,		obsolete_prompt)
 varstr (VAR_prompt_usec,"prompt_usec",	NULL,		obsolete_prompt)

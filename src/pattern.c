@@ -1,11 +1,10 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: pattern.c,v 35004.4 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /*
@@ -49,7 +48,7 @@ int regmatch_in_scope(Value *val, const char *pattern, String *str)
 	if (!(reginfo = tf_reg_compile(pattern, 0)))
 	    return 0;
     } else if (val->type & TYPE_REGEX) {
-	/* use precompiled regexp */
+	/* use pre-compiled regexp */
 	(reginfo = val->u.ri)->links++;
     } else {
 	/* compile regexp, and store it on val for future reuse */

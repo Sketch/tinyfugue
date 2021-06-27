@@ -1,11 +1,10 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: command.c,v 35004.141 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /*****************************************************************
@@ -406,7 +405,7 @@ struct Value *handle_limit_command(String *args, int offset)
 {
     int mflag = matching;
     int got_opts = 0;
-    int result, had_filter, has_new_pat;
+    int result, has_new_pat;
     char c;
     const char *ptr;
     Screen *screen = display_screen;
@@ -442,7 +441,6 @@ struct Value *handle_limit_command(String *args, int offset)
 	    goto end;
 	}
     }
-    had_filter = screen_has_filter(screen);
     clear_screen_filter(screen);
     set_screen_filter(screen, has_new_pat ? &pat : NULL, attr_flag, sense);
 
@@ -605,7 +603,7 @@ int do_file_load(const char *args, int tinytalk)
 		!user_result->u.ival && !warned)
 	    {
 		eprintf("(This line was implicitly treated as an /addworld "
-		    "because it occured before the first '/' line and did not "
+		    "because it occurred before the first '/' line and did not "
 		    "start with a '/', ';', or '#'.)");
 		warned = 1;
 	    }
@@ -718,7 +716,7 @@ struct Value *handle_load_command(String *args, int offset)
 
 /* Generic utility to split arguments into pattern and body.
  * Note: I can get away with this only because none of the functions
- * that use it are reentrant.  Be careful.
+ * that use it are re-entrant.  Be careful.
  */
 static void split_args(char *args)
 {

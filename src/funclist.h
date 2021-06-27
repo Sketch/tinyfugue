@@ -1,11 +1,10 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: funclist.h,v 35000.66 2007/01/13 23:12:39 kkeys Exp $ */
 
 /* sorted by name */
 /*	 Name		Pure	Arguments */
@@ -17,6 +16,9 @@ funccode(addworld,	0,	2,  9),
 funccode(ascii,		1,	1,  1),
 funccode(asin,		1,	1,  1),
 funccode(atan,		1,	1,  1),
+#if ENABLE_ATCP
+funccode(atcp,		0,	1,  2),
+#endif
 funccode(char,		1,	1,  1),
 funccode(columns,	0,	0,  0),
 funccode(cos,		1,	1,  1),
@@ -36,6 +38,9 @@ funccode(fwrite,	0,	2,  2),
 funccode(gethostname,	0,	0,  0),
 funccode(getopts,	0,	1,  2),
 funccode(getpid,	1,	0,  0),
+#if ENABLE_GMCP
+funccode(gmcp,		0,	1,  2),
+#endif
 funccode(idle,		0,	0,  1),
 funccode(is_connected,	0,	0,  1),
 funccode(is_open,	0,	0,  1),
@@ -62,6 +67,9 @@ funccode(nactive,	0,	0,  1),
 funccode(nlog,		0,	0,  0),
 funccode(nmail,		0,	0,  0),
 funccode(nread,		0,	0,  0),
+#if ENABLE_OPTION102
+funccode(option102,	0,	1,  2),
+#endif
 funccode(pad,		1,	1,  (unsigned)-1),
 funccode(pow,		1,	2,  2),
 funccode(prompt,	0,	1,  1),

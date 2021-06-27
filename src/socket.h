@@ -1,11 +1,10 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: socket.h,v 35004.44 2007/01/13 23:12:39 kkeys Exp $ */
 
 #ifndef SOCKET_H
 #define SOCKET_H
@@ -21,7 +20,7 @@
 #define CONN_BG		0x08
 #define CONN_FG		0x10
 
-struct World   *world_decl;	/* declares struct World */
+struct World;	/* declares struct World */
 
 extern String *incoming_text;
 extern int quit_flag;
@@ -45,6 +44,15 @@ extern void    transmit_window_size(void);
 extern int     local_echo(int flag);
 extern int     handle_send_function(conString *string, const char *world,
                      const char *flags);
+#if ENABLE_ATCP
+extern int     handle_atcp_function(conString *string, const char *world);
+#endif
+#if ENABLE_GMCP
+extern int     handle_gmcp_function(conString *string, const char *world);
+#endif
+#if ENABLE_OPTION102
+extern int     handle_option102_function(conString *string, const char *world);
+#endif
 extern int     handle_fake_recv_function(conString *string, const char *world,
 		    const char *flags);
 extern int     is_connected(const char *worldname);

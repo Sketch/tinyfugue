@@ -1,17 +1,19 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: hooklist.h,v 35000.24 2007/01/13 23:12:39 kkeys Exp $ */
 
 /* This keeps the constants and the array in the same place
  * so they can't get out of sync.
  */
 
 gencode(ACTIVITY,	HT_ALERT | HT_XSOCK),
+#if ENABLE_ATCP
+gencode(ATCP,		0),
+#endif
 gencode(BAMF,		HT_WORLD | HT_XSOCK),
 gencode(BGTEXT,		0),
 gencode(BGTRIG,		HT_ALERT | HT_XSOCK),
@@ -19,6 +21,9 @@ gencode(CONFAIL,	HT_WORLD | HT_XSOCK),
 gencode(CONFLICT,	0),
 gencode(CONNECT,	HT_WORLD | HT_XSOCK),
 gencode(DISCONNECT,	HT_WORLD | HT_XSOCK),
+#if ENABLE_GMCP
+gencode(GMCP,		0),
+#endif
 gencode(ICONFAIL,	HT_WORLD | HT_XSOCK),
 gencode(KILL,		0),
 gencode(LOAD,		0),
@@ -28,6 +33,9 @@ gencode(LOGIN,		0),
 gencode(MAIL,		HT_ALERT),
 gencode(MORE,		0),
 gencode(NOMACRO,	0),
+#if ENABLE_OPTION102
+gencode(OPTION102,	0),
+#endif
 gencode(PENDING,	HT_WORLD | HT_XSOCK),
 gencode(PREACTIVITY,	0),
 gencode(PROCESS,	0),
